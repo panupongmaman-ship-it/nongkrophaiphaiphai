@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar Maker Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .chat-container {
+            height: calc(100vh - 160px);
+        }
+        .message-appear {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        pre {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            margin: 0.5rem 0;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="max-w-2xl mx-auto h-screen flex flex-col shadow-2xl bg-white">
+        <!-- Header -->
+        <header class="bg-blue-600 p-4 text-white flex items-center gap-3 shadow-md">
+            <div class="bg-white/20 p-2 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="font-bold">Calendar Builder Bot</h1>
+                <p class="text-xs text-blue-100">ผู้ช่วยสร้างปฏิทินด้วย HTML/JS</p>
+            </div>
+        </header>
+
+        <!-- Chat Area -->
+        <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar chat-container">
+            <!-- Bot Welcome Message -->
+            <div class="flex justify-start message-appear">
+                <div class="bg-slate-100 border border-slate-200 p-3 rounded-2xl rounded-tl-none max-w-[85%] text-slate-800 shadow-sm">
+                    สวัสดีครับ! ผมจะช่วยคุณสร้างปฏิทินแบบ Interactive ด้วย HTML 🗓️<br><br>
+                    คุณอยากเริ่มจากส่วนไหนก่อนดีครับ?
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Suggestions -->
+        <div class="p-2 overflow-x-auto flex gap-2 bg-slate-50 border-t border-slate-100">
+            <button onclick="ask('โครงสร้าง HTML')" class="whitespace-nowrap px-3 py-1 bg-white border border-blue-200 text-blue-600 rounded-full text-sm hover:bg-blue-50 transition-colors">🏗️ โครงสร้าง HTML</button>
+            <button onclick="ask('ตกแต่งด้วย CSS')" class="whitespace-nowrap px-3 py-1 bg-white border border-blue-200 text-blue-600 rounded-full text-sm hover:bg-blue-50 transition-colors">🎨 ตกแต่ง CSS</button>
+            <button onclick="ask('ใส่ JavaScript')" class="whitespace-nowrap px-3 py-1 bg-white border border-blue-200 text-blue-600 rounded-full text-sm hover:bg-blue-50 transition-colors">⚡ ใส่ JavaScript</button>
+            <button onclick="ask('ขอโค้ดเต็มๆ')" class="whitespace-nowrap px-3 py-1 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700 transition-colors">🚀 โค้ดที่รันได้ทันที</button>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-white border-t border-slate-200 flex gap-2">
+            <input type="text" id="user-input" placeholder="พิมพ์คำถามที่นี่..." class="flex-1 bg-slate-100 border-none rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none">
+            <button onclick="handleSend()" class="bg-blue-600 text-white p-2 rounded-xl hover:bg-blue-700 shadow-lg active:scale-95 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+
+        const knowledge = {
+            'html': {
+                response: "โครงสร้างหลักของปฏิทินจะประกอบด้วย ส่วนหัว (Header) สำหรับบอกเดือน/ปี และ ส่วนตาราง (Grid) สำหรับวันที่ครับ",
+                code: `<div class="calendar">
+  <div class="header">
+    <button id="prev">◀</button>
+    <h2 id="month-year">Month Year</h2>
+    <button id="next">▶</button>
+  </div>
+  <div class="days-grid" id="days-container">
+    <!-- วันที่จะถูกสร้างด้วย JS -->
+  </div>
+</div>`
+            },
+            'css': {
+                response: "ใช้ CSS Grid จะช่วยให้สร้างตาราง 7 คอลัมน์ (ตามวันในสัปดาห์) ได้ง่ายที่สุดครับ",
+                code: `.days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+.day {
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #eee;
+}`
+            },
+            'js': {
+                response: "Logic สำคัญคือการหา 'วันแรกของเดือน' และ 'จำนวนวันทั้งหมด' ในเดือนนั้นๆ ครับ",
+                code: `const date = new Date();
+const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+
+// วนลูปสร้าง div ตามจำนวน lastDay`
+            },
+            'full': {
+                response: "นี่คือโค้ดตัวอย่างแบบสมบูรณ์ที่คุณสามารถนำไปสร้างเป็นไฟล์ .html และรันได้ทันทีครับ",
+                code: `<!-- ตัวอย่างปฏิทินแบบง่าย -->
+<style>
+  .cal { font-family: sans-serif; width: 300px; border: 1px solid #ccc; }
+  .cal-head { display: flex; justify-content: space-between; padding: 10px; background: #f4f4f4; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .cal-day { padding: 10px; text-align: center; border: 0.5px solid #eee; }
+</style>
+
+<div class="cal">
+  <div class="cal-head">
+    <span>February 2026</span>
+  </div>
+  <div class="cal-grid" id="g"></div>
+</div>
+
+<script>
+  const g = document.getElementById('g');
+  for(let i=1; i<=28; i++) {
+    g.innerHTML += '<div class="cal-day">' + i + '</div>';
+  }
+<\/script>`
+            }
+        };
+
+        function addMessage(text, sender, code = null) {
+            const div = document.createElement('div');
+            div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} message-appear`;
+            
+            let content = `
+                <div class="${sender === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 text-slate-800 rounded-tl-none'} p-3 rounded-2xl max-w-[90%] shadow-sm">
+                    <div class="text-sm">${text}</div>
+            `;
+            
+            if (code) {
+                content += `<pre><code>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+                <button onclick="copyCode(this)" class="text-[10px] bg-slate-700 text-slate-300 px-2 py-1 rounded mt-1 hover:bg-slate-600">คัดลอกโค้ด</button>`;
+            }
+            
+            content += `</div>`;
+            div.innerHTML = content;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function ask(type) {
+            let key = '';
+            if (type.includes('HTML')) key = 'html';
+            else if (type.includes('CSS')) key = 'css';
+            else if (type.includes('JavaScript')) key = 'js';
+            else if (type.includes('เต็ม')) key = 'full';
+
+            addMessage(type, 'user');
+            
+            setTimeout(() => {
+                if (knowledge[key]) {
+                    addMessage(knowledge[key].response, 'bot', knowledge[key].code);
+                } else {
+                    addMessage("ขออภัยครับ ลองเลือกจากเมนูแนะนำด้านล่างดูนะครับ", 'bot');
+                }
+            }, 600);
+        }
+
+        function handleSend() {
+            const val = userInput.value.trim();
+            if (!val) return;
+            
+            addMessage(val, 'user');
+            userInput.value = '';
+            
+            setTimeout(() => {
+                const lower = val.toLowerCase();
+                if (lower.includes('html')) ask('โครงสร้าง HTML');
+                else if (lower.includes('css')) ask('ตกแต่งด้วย CSS');
+                else if (lower.includes('js') || lower.includes('java')) ask('ใส่ JavaScript');
+                else if (lower.includes('โค้ด')) ask('ขอโค้ดเต็มๆ');
+                else addMessage("ลองถามเกี่ยวกับ 'โครงสร้าง HTML' หรือ 'ขอโค้ดเต็มๆ' ดูไหมครับ?", "bot");
+            }, 600);
+        }
+
+        function copyCode(btn) {
+            const code = btn.previousElementSibling.innerText;
+            const el = document.createElement('textarea');
+            el.value = code;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            
+            const originalText = btn.innerText;
+            btn.innerText = 'คัดลอกแล้ว!';
+            btn.classList.replace('bg-slate-700', 'bg-green-600');
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.classList.replace('bg-green-600', 'bg-slate-700');
+            }, 2000);
+        }
+
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+    </script>
+</body>
+</html>
